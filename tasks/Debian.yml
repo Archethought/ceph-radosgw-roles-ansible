@@ -2,13 +2,19 @@
 ## Deploy RADOS Gateway
 #
 
-- name: Copy RGW bootstrap key
-  copy: src=fetch/{{ fsid }}/etc/ceph/keyring.radosgw.gateway dest=/etc/ceph/keyring.radosgw.gateway owner=root group=root mode=600
-  when: cephx
+#- name: Copy RGW bootstrap key
+#  copy: src=fetch/{{ fsid }}/etc/ceph/keyring.radosgw.gateway dest=/etc/ceph/keyring.radosgw.gateway owner=root group=root mode=600
+#  when: cephx
 
-- name: Set RGW bootstrap key permissions
-  file: path=/etc/ceph/keyring.radosgw.gateway mode=0600 owner=root group=root
+#- name: Set RGW bootstrap key permissions
+#  file: path=/etc/ceph/keyring.radosgw.gateway mode=0600 owner=root group=root
+#  when: cephx
+
+## Get credentials from Ceph for the gateway
+- name: Get the radosgw keyring
+  command: ceph auth get-or-create client.radosgw.{{ ansible_hostname }} osd 'allow rwx' mon 'allow rw' -o /etc/ceph/keyring.radosgw.{{ ansible_hostname }} creates=/etc/ceph/keyring.radosgw.{{ ansible_hostname }}
   when: cephx
+  changed_when: False
 
 #- name: Add optimized version of the apache2 package repository
 #  apt_repository: repo='deb http://gitbuilder.ceph.com/apache2-deb-{{ ansible_lsb.codename }}-x86_64-basic/ref/master {{ ansible_lsb.codename }} main' state=present
@@ -17,8 +23,11 @@
 #  apt_repository: repo='deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ ansible_lsb.codename }}-x86_64-basic/ref/master {{ ansible_lsb.codename }} main' state=present
 #
 
+#- name: Add Ceph extra
+#  apt_repository: repo='deb http://ceph.com/packages/ceph-extras/debian {{ ansible_lsb.codename }} main' state=present
+
 - name: Add Ceph extra
-  apt_repository: repo='deb http://ceph.com/packages/ceph-extras/debian {{ ansible_lsb.codename }} main' state=present
+  apt_repository: repo='deb http://ceph.com/packages/ceph-extras/debian wheezy main' state=present
 
 - name: Install Apache, fastcgi and Rados Gateway
   apt: pkg={{ item }} state=present
@@ -52,7 +61,8 @@
   command: "{{ item }}"
   with_items:
     - a2ensite rgw.conf
-    - a2dissite default
+#    - a2dissite default
+    - a2dissite 000-default
   notify:
     - restart apache2
 
