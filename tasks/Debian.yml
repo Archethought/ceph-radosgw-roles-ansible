@@ -5,7 +5,7 @@
 ## Get the certs from keystone
 - name: Copy the CA cert to the node
   copy:
-    src="/tmp/ansible_fetch/keystone/ssl/certs/CA.pem"
+    src="/tmp/ansible_fetch/keystone/ssl/certs/ca.pem"
     dest="/etc/keystone/ssl/certs/CA.pem"
     owner="root"
     group="root"
