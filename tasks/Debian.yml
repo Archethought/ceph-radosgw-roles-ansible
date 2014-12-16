@@ -2,6 +2,41 @@
 ## Deploy RADOS Gateway
 #
 
+## Get the certs from keystone
+- name: Copy the CA cert to the node
+  copy:
+    src="/tmp/ansible_fetch/keystone/ssl/certs/CA.pem"
+    dest="/etc/keystone/ssl/certs/CA.pem"
+    owner="root"
+    group="root"
+    mode=0644
+#  when: cinder_store_ceph
+## Currently, we're only going to support RADOSGW authenticating through Keystone
+
+- name: Copy the Signing cert to the node
+  copy:
+    src="/tmp/ansible_fetch/keystone/ssl/certs/signing_cert.pem"
+    dest="/etc/keystone/ssl/certs/signing_cert.pem"
+    owner="root"
+    group="root"
+    mode=0644
+#  when: cinder_store_ceph
+## Currently, we're only going to support RADOSGW authenticating through Keystone
+
+# mkdir /var/ceph/nss
+- name: Create the Ceph cert directory
+  file:
+    path=/var/ceph/nss
+    state=directory
+
+# convert CA cert to nss
+- name: Convert the CA cert to Ceph
+  command: openssl x509 -in /etc/keystone/ssl/certs/ca.pem -pubkey | certutil -d /var/ceph/nss -A -n ca -t "TCu,Cu,Tuw"
+
+# convert Signing cert to nss
+- name: Convert the Signing cert to Ceph
+  command: openssl x509 -in /etc/keystone/ssl/certs/signing_cert.pem -pubkey | certutil -A -d /var/ceph/nss -n signing_cert -t "P,P,P"
+
 #- name: Copy RGW bootstrap key
 #  copy: src=fetch/{{ fsid }}/etc/ceph/keyring.radosgw.gateway dest=/etc/ceph/keyring.radosgw.gateway owner=root group=root mode=600
 #  when: cephx
@@ -12,7 +47,7 @@
 
 ## Get credentials from Ceph for the gateway
 - name: Get the radosgw keyring
-  command: ceph auth get-or-create client.radosgw.{{ ansible_hostname }} osd 'allow rwx' mon 'allow rw' -o /etc/ceph/keyring.radosgw.{{ ansible_hostname }} creates=/etc/ceph/keyring.radosgw.{{ ansible_hostname }}
+  command: ceph auth get-or-create client.radosgw.{{ ansible_hostname }} osd 'allow rwx' mon 'allow rw' -o /etc/ceph/keyring.radosgw.{{ ansible_hostname }}
   when: cephx
   changed_when: False
 
