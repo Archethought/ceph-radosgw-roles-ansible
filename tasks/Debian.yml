@@ -115,3 +115,15 @@
 - name: Start RGW
   command: /etc/init.d/radosgw start
   when: rgwstatus.rc != 0
+
+# Add the radosgw to the openstack service list
+- name: Add the service and endpoints for RADOSGW (swift)
+  keystone_service:
+    name=swift
+    type=object-store
+    description="OpenStack Object Storage (RADOSGW)"
+    region=regionOne
+    url="http://{{ oscluster_controller_hostname }}:8080/swift/v1"
+    token="{{ oscluster_token_admin }}"
+    endpoint="{{ 'https' if keystone_ssl_enable else 'http' }}://{{ oscluster_controller_hostname }}:35357/v2.0"
+    insecure="{{ 'yes' if ssl_allow_insecure else 'no' }}"
