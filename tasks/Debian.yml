@@ -2,11 +2,16 @@
 ## Deploy RADOS Gateway
 #
 
+- name: Create the keystone cert directory
+  file:
+    path=/etc/keystone/ssl/certs
+    state=directory
+
 ## Get the certs from keystone
 - name: Copy the CA cert to the node
   copy:
     src="/tmp/ansible_fetch/keystone/ssl/certs/ca.pem"
-    dest="/etc/keystone/ssl/certs/CA.pem"
+    dest="/etc/keystone/ssl/certs/ca.pem"
     owner="root"
     group="root"
     mode=0644
@@ -23,17 +28,14 @@
 #  when: cinder_store_ceph
 ## Currently, we're only going to support RADOSGW authenticating through Keystone
 
-# mkdir /var/ceph/nss
 - name: Create the Ceph cert directory
   file:
     path=/var/ceph/nss
     state=directory
 
-# convert CA cert to nss
 - name: Convert the CA cert to Ceph
   command: openssl x509 -in /etc/keystone/ssl/certs/ca.pem -pubkey | certutil -d /var/ceph/nss -A -n ca -t "TCu,Cu,Tuw"
 
-# convert Signing cert to nss
 - name: Convert the Signing cert to Ceph
   command: openssl x509 -in /etc/keystone/ssl/certs/signing_cert.pem -pubkey | certutil -A -d /var/ceph/nss -n signing_cert -t "P,P,P"
 
