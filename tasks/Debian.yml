@@ -48,6 +48,13 @@
     group="root"
     mode=0644
 
+- name: Add cert to ca list
+  lineinfile:
+    backup=yes
+    dest=/etc/ca-certificates.conf
+    regexp='^keystone.crt'
+    line='keystone.crt'
+
 - name: Run the update-ca-certificates command
   command: update-ca-certificates
 
