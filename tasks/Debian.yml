@@ -39,6 +39,18 @@
 - name: Convert the Signing cert to Ceph
   raw: "openssl x509 -in /etc/keystone/ssl/certs/signing_cert.pem -pubkey | certutil -A -d /etc/ceph/nss -n signing_cert -t 'P,P,P'"
 
+## Adding the certs to the system CA folder
+- name: Copy the CA cert to the system CA folder
+  copy:
+    src="/tmp/ansible_fetch/keystone/ssl/certs/ca.pem"
+    dest="/usr/share/ca-certificates/keystone.crt"
+    owner="root"
+    group="root"
+    mode=0644
+
+- name: Run the update-ca-certificates command
+  command: update-ca-certificates
+
 #- name: Copy RGW bootstrap key
 #  copy: src=fetch/{{ fsid }}/etc/ceph/keyring.radosgw.gateway dest=/etc/ceph/keyring.radosgw.gateway owner=root group=root mode=600
 #  when: cephx
@@ -115,15 +127,3 @@
 - name: Start RGW
   command: /etc/init.d/radosgw start
   when: rgwstatus.rc != 0
-
-# Add the radosgw to the openstack service list
-- name: Add the service and endpoints for RADOSGW (swift)
-  keystone_service:
-    name=swift
-    type=object-store
-    description="OpenStack Object Storage (RADOSGW)"
-    region=regionOne
-    url="http://{{ oscluster_controller_hostname }}:8080/swift/v1"
-    token="{{ oscluster_token_admin }}"
-    endpoint="{{ 'https' if keystone_ssl_enable else 'http' }}://{{ oscluster_controller_hostname }}:35357/v2.0"
-    insecure="{{ 'yes' if ssl_allow_insecure else 'no' }}"
